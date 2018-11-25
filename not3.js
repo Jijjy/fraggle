@@ -94,7 +94,8 @@
             vertex_position,
             uniforms = options.uniforms,
             uniformSetters = {},
-            start_time = now();
+            start_time = now(),
+            scaling = options.scaling || 1;
 
         if (!options.vertex)
             options.vertex = 'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }';
@@ -164,6 +165,10 @@
                     " SHADER:\n" +
                     gl.getShaderInfoLog(shader));
 
+                console.warn(src.split('\n').map(function (s, i) {
+                    return i + ': ' + s;
+                }).join('\n'));
+
                 return;
             }
 
@@ -175,8 +180,9 @@
                 canvas.width != canvas.clientWidth ||
                 canvas.height != canvas.clientHeight
             ) {
-                canvas.width = canvas.clientWidth;
-                canvas.height = canvas.clientHeight;
+                canvas.width = canvas.clientWidth * scaling;
+                canvas.height = canvas.clientHeight * scaling;
+
                 uniforms.resolution = [canvas.width, canvas.height];
                 gl.viewport(0, 0, canvas.width, canvas.height);
             }
