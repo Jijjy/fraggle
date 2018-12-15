@@ -97,6 +97,9 @@
             start_time = now(),
             scaling = options.scaling || 1;
 
+        if (!options)
+            options = {};
+
         //legacy
         if (options === typeof Element) {
             options = arguments[1];
@@ -134,7 +137,7 @@
 
             uniforms.time = 0;
             uniforms.resolution = [0, 0];
-            uniformSetters = getSetters(gl, program, options.uniforms);
+            uniformSetters = getSetters(gl, program, uniforms);
 
             //console.log(uniformSetters);
         }
