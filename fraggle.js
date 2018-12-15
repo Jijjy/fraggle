@@ -92,7 +92,7 @@
             buffer,
             program,
             vertex_position,
-            uniforms = options.uniforms,
+            uniforms = options.uniforms || {},
             uniformSetters = {},
             start_time = now(),
             scaling = options.scaling || 1;
@@ -124,7 +124,7 @@
             uniforms.resolution = [0, 0];
             uniformSetters = getSetters(gl, program, options.uniforms);
 
-            console.log(uniformSetters);
+            //console.log(uniformSetters);
         }
 
         function createProgram(vertex, fragment) {
