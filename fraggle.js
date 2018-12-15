@@ -88,23 +88,24 @@
     }
 
     window.not3 = function (options) {
+
         var gl,
             buffer,
             program,
             vertex_position,
-            uniforms = options.uniforms || {},
+            uniforms = options ? options.uniforms || {} : {},
             uniformSetters = {},
             start_time = now(),
-            scaling = options.scaling || 1;
-
-        if (!options)
-            options = {};
+            scaling = options ? options.scaling || 1 : 1;
 
         //legacy
         if (options === typeof Element) {
             options = arguments[1];
             options.canvas = arguments[0];
         }
+
+        if (!options)
+            options = {};
 
         if (!options.canvas)
             options.canvas = document.querySelector('canvas');
