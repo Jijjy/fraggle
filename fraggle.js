@@ -98,7 +98,8 @@
             uniformSetters = {},
             start_time = now(),
             scaling = options ? options.scaling || 1 : 1,
-            textureActivators = [];
+            textureActivators = [],
+            version = '';
 
         //legacy
         if (options === typeof Element) {
@@ -114,16 +115,17 @@
         if (!options.fragment)
             options.fragment = document.getElementById('fs').textContent.trim();
 
+        let ln = options.fragment.indexOf('\n');
+        version = options.fragment.indexOf('#version') < 0 ? '' : options.fragment.substr(0, ln + 1);
+        options.fragment = options.fragment.substr(ln);
+
         if (!options.vertex) {
-            let ln = options.fragment.indexOf('\n');
-            let version = options.fragment.indexOf('#version') < 0 ? '' : options.fragment.substr(0, ln + 1);
-            let vs = version.indexOf('300') < 0 ?
+            options.vertex = version + (version.indexOf('300') < 0 ?
                 'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }' :
-                'in vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }';
-            options.vertex = version + vs;
+                'in vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }');
         }
 
-        this.console.log(options);
+        //this.console.log(options);
 
         init();
         animate();
@@ -163,16 +165,10 @@
             fragment = fragment.trim();
 
             if (fragment.indexOf('precision') < 0) {
-
-                if (fragment.indexOf('#version') < 0)
-                    fragment = '\n' + fragment;
-
-                let ln = fragment.indexOf('\n');
-                let vers = fragment.substr(0, ln + 1);
-                fragment = vers + "\n#ifdef GL_ES\n  precision highp float;\n#endif\n\n" + fragment.substr(ln);
+                fragment = "#ifdef GL_ES\n  precision highp float;\n#endif\n\n" + fragment;
             }
 
-            var fs = createShader(fragment, gl.FRAGMENT_SHADER);
+            var fs = createShader(version + '\n' + fragment, gl.FRAGMENT_SHADER);
 
             if (!vs || !fs) return;
 
