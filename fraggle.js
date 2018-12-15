@@ -87,7 +87,7 @@
         return setters;
     }
 
-    window.not3 = function (canvas, options) {
+    window.not3 = function (options) {
         var gl,
             buffer,
             program,
@@ -96,6 +96,15 @@
             uniformSetters = {},
             start_time = now(),
             scaling = options.scaling || 1;
+
+        //legacy
+        if (options === typeof Element) {
+            options = arguments[1];
+            options.canvas = arguments[0];
+        }
+
+        if (!options.canvas)
+            options.canvas = document.querySelector('canvas');
 
         if (!options.vertex)
             options.vertex = 'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }';
