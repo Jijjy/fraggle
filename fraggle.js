@@ -98,7 +98,6 @@
             uniformSetters = {},
             start_time = now(),
             scaling = options ? options.scaling || 1 : 1,
-            textureActivators = [],
             version = '';
 
         //legacy
@@ -125,10 +124,8 @@
                 'in vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }');
         }
 
-        //this.console.log(options);
-
         init();
-        animate();
+        requestAnimationFrame(animate);
 
         function init() {
             try {
@@ -153,8 +150,6 @@
 
             if (options.textures)
                 loadTextures(options.textures);
-
-            //console.log(uniformSetters);
         }
 
         function createProgram(vertex, fragment) {
@@ -212,24 +207,27 @@
         function loadTextures(textures) {
 
             function load2d(t) {
-                if (typeof t.data === typeof Uint8Array) {
+                if (t.data.constructor === Uint8Array) {
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, t.resolution[0], t.resolution[1], 0, gl.RGBA, gl.UNSIGNED_BYTE, t.data);
+                    return;
                 } //todo by url
+                console.error('failed to load texture', t);
             }
 
             function load3d(t) {
-                if (typeof t.data === typeof Uint8Array) {
+                if (t.data.constructor === Uint8Array) {
                     gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA, t.resolution[0], t.resolution[1], t.resolution[2], 0, gl.RGBA, gl.UNSIGNED_BYTE, t.data);
+                    return;
                 } //todo by url?
+                console.error('failed to load texture', t);
             }
-
-            const activators = [
-                gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4, gl.TEXTURE5, gl.TEXTURE6, gl.TEXTURE7
-            ];
 
             textures.forEach(function (t, i) {
                 let tex = gl.createTexture();
-                let loc = gl.getUniformLocation(program, t.name);
                 let ttype = t.resolution.length === 2 ? gl.TEXTURE_2D : gl.TEXTURE_3D;
                 gl.bindTexture(ttype, tex);
                 if (t.resolution.length === 2) {
@@ -237,14 +235,6 @@
                 } else if (t.resolution.length === 2) {
                     load3d(t);
                 }
-
-                textureActivators.push((function (loc, i, tex, ttype, activator) {
-                    return function () {
-                        gl.uniform1i(loc, i);
-                        gl.activeTexture(activator);
-                        gl.bindTexture(ttype, tex);
-                    }
-                })(loc, i, tex, ttype, activators[i]));
             });
         }
 
@@ -283,11 +273,6 @@
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
             gl.vertexAttribPointer(vertex_position, 2, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(vertex_position);
-
-            textureActivators.forEach(function (x) {
-                x();
-            });
-
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             gl.disableVertexAttribArray(vertex_position);
         }

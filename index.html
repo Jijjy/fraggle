@@ -57,6 +57,8 @@
             float a = atan(pos.y, pos.x);
 
             if(gl_FragCoord.x + gl_FragCoord.y < 128.0){
+                outColor = texture( u_image0, vec2( mod(gl_FragCoord.x, 32.0)/32.0, mod(gl_FragCoord.y, 32.0)/32.0 ) );
+            }else if(gl_FragCoord.x + gl_FragCoord.y < 150.0){
                 for(int i=0; i<TEST_DATA_SIZE; i++){
                     if(i > int(gl_FragCoord.x)){
                         outColor = getColor( testdata[i] );
@@ -98,6 +100,10 @@
             return result;
         }
 
+        function randomByte() {
+            return Math.floor(Math.random() * 255);
+        }
+
         not3({
             uniforms: {
                 rpm: 0,
@@ -107,12 +113,12 @@
             },
             textures: [{
                 name: 'u_image0',
-                resolution: [1, 1],
-                data: new Uint8Array([255, 0, 255, 255])
+                resolution: [32, 32],
+                data: new Uint8Array(gen(4 * 32 * 32, i => i % 4 === 3 ? 255 : randomByte()))
             }, {
                 name: 'u_image1',
-                resolution: [1, 1],
-                data: new Uint8Array([255, 255, 0, 255])
+                resolution: [32, 32],
+                data: new Uint8Array(gen(4 * 32 * 32, i => i % 4 === 3 ? 255 : randomByte()))
             }],
             update: function (u, t) {
                 u.rpm = 2 * Math.PI * (u.time % 60) / 60;
