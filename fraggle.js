@@ -100,6 +100,9 @@
         if (!options.vertex)
             options.vertex = 'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }';
 
+        if (!options.fragment)
+            options.fragment = document.getElementById("fs").textContent;
+
         init();
         animate();
 
