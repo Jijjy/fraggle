@@ -89,14 +89,16 @@
 
     window.not3 = function (options) {
 
-        var gl,
+        var cvs,
+            gl,
             buffer,
             program,
             vertex_position,
             uniforms = options ? options.uniforms || {} : {},
             uniformSetters = {},
             start_time = now(),
-            scaling = options ? options.scaling || 1 : 1;
+            scaling = options ? options.scaling || 1 : 1,
+            textureActivators = [];
 
         //legacy
         if (options === typeof Element) {
@@ -107,21 +109,28 @@
         if (!options)
             options = {};
 
-        if (!options.canvas)
-            options.canvas = document.querySelector('canvas');
-
-        if (!options.vertex)
-            options.vertex = 'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }';
+        cvs = options.canvas || document.querySelector('canvas');
 
         if (!options.fragment)
             options.fragment = document.getElementById('fs').textContent.trim();
+
+        if (!options.vertex) {
+            let ln = options.fragment.indexOf('\n');
+            let version = options.fragment.indexOf('#version') < 0 ? '' : options.fragment.substr(0, ln + 1);
+            let vs = version.indexOf('300') < 0 ?
+                'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }' :
+                'in vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }';
+            options.vertex = version + vs;
+        }
+
+        this.console.log(options);
 
         init();
         animate();
 
         function init() {
             try {
-                gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                gl = cvs.getContext('webgl2') || cvs.getContext('webgl');
             } catch (e) {}
 
             if (!gl) {
@@ -140,6 +149,9 @@
             uniforms.resolution = [0, 0];
             uniformSetters = getSetters(gl, program, uniforms);
 
+            if (options.textures)
+                loadTextures(options.textures);
+
             //console.log(uniformSetters);
         }
 
@@ -147,10 +159,20 @@
             var prog = gl.createProgram();
 
             var vs = createShader(vertex, gl.VERTEX_SHADER);
-            var fs = createShader(
-                "#ifdef GL_ES\nprecision highp float;\n#endif\n\n" + fragment,
-                gl.FRAGMENT_SHADER
-            );
+
+            fragment = fragment.trim();
+
+            if (fragment.indexOf('precision') < 0) {
+
+                if (fragment.indexOf('#version') < 0)
+                    fragment = '\n' + fragment;
+
+                let ln = fragment.indexOf('\n');
+                let vers = fragment.substr(0, ln + 1);
+                fragment = vers + "\n#ifdef GL_ES\n  precision highp float;\n#endif\n\n" + fragment.substr(ln);
+            }
+
+            var fs = createShader(fragment, gl.FRAGMENT_SHADER);
 
             if (!vs || !fs) return;
 
@@ -191,16 +213,55 @@
             return shader;
         }
 
+        function loadTextures(textures) {
+
+            function load2d(t) {
+                if (typeof t.data === typeof Uint8Array) {
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, t.resolution[0], t.resolution[1], 0, gl.RGBA, gl.UNSIGNED_BYTE, t.data);
+                } //todo by url
+            }
+
+            function load3d(t) {
+                if (typeof t.data === typeof Uint8Array) {
+                    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA, t.resolution[0], t.resolution[1], t.resolution[2], 0, gl.RGBA, gl.UNSIGNED_BYTE, t.data);
+                } //todo by url?
+            }
+
+            const activators = [
+                gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4, gl.TEXTURE5, gl.TEXTURE6, gl.TEXTURE7
+            ];
+
+            textures.forEach(function (t, i) {
+                let tex = gl.createTexture();
+                let loc = gl.getUniformLocation(program, t.name);
+                let ttype = t.resolution.length === 2 ? gl.TEXTURE_2D : gl.TEXTURE_3D;
+                gl.bindTexture(ttype, tex);
+                if (t.resolution.length === 2) {
+                    load2d(t);
+                } else if (t.resolution.length === 2) {
+                    load3d(t);
+                }
+
+                textureActivators.push((function (loc, i, tex, ttype, activator) {
+                    return function () {
+                        gl.uniform1i(loc, i);
+                        gl.activeTexture(activator);
+                        gl.bindTexture(ttype, tex);
+                    }
+                })(loc, i, tex, ttype, activators[i]));
+            });
+        }
+
         function resizeCanvas() {
             if (
-                canvas.width != canvas.clientWidth ||
-                canvas.height != canvas.clientHeight
+                cvs.width != cvs.clientWidth ||
+                cvs.height != cvs.clientHeight
             ) {
-                canvas.width = canvas.clientWidth * scaling;
-                canvas.height = canvas.clientHeight * scaling;
+                cvs.width = cvs.clientWidth * scaling;
+                cvs.height = cvs.clientHeight * scaling;
 
-                uniforms.resolution = [canvas.width, canvas.height];
-                gl.viewport(0, 0, canvas.width, canvas.height);
+                uniforms.resolution = [cvs.width, cvs.height];
+                gl.viewport(0, 0, cvs.width, cvs.height);
             }
         }
 
@@ -226,6 +287,11 @@
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
             gl.vertexAttribPointer(vertex_position, 2, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(vertex_position);
+
+            textureActivators.forEach(function (x) {
+                x();
+            });
+
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             gl.disableVertexAttribArray(vertex_position);
         }

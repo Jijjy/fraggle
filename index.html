@@ -22,6 +22,9 @@
     <div id="info"></div>
 
     <script id="fs" type="x-shader/fragment">
+        #version 300 es
+
+        out vec4 outColor;
 
         const float tau = 6.28318530718;
 
@@ -36,6 +39,9 @@
 
         uniform dstruct hand1;
         uniform dstruct hand2;
+
+        uniform sampler2D u_image0;
+        uniform sampler2D u_image1;
 
         const int TEST_DATA_SIZE = 64;
         uniform dstruct testdata[TEST_DATA_SIZE];
@@ -53,23 +59,23 @@
             if(gl_FragCoord.x + gl_FragCoord.y < 128.0){
                 for(int i=0; i<TEST_DATA_SIZE; i++){
                     if(i > int(gl_FragCoord.x)){
-                        gl_FragColor = getColor( testdata[i] );
+                        outColor = getColor( testdata[i] );
                         break;
                     }
                 }
             } else if(hand(a + rpm)){
-                gl_FragColor = getColor( hand1 );
+                outColor = getColor( hand1 );
             } else if(hand(a + 60.0*rpm)){
-                gl_FragColor = getColor( hand2 );
+                outColor = getColor( hand2 );
             } else {
                 float ma = a - mod(a, tau/12.0);
-                gl_FragColor = vec4( hand(a + rpm) , hand(a + 60.0*rpm) , 0.5 + 0.5*sin(ma) , 1);
+                outColor = vec4( hand(a + rpm) , hand(a + 60.0*rpm) , 0.5 + 0.5*sin(ma) , 1);
             }
         }
  
 		</script>
 
-    <script src="not3.js"></script>
+    <script src="fraggle.js"></script>
     <script>
         function generateDstruct(r, g, b, a) {
             return {
@@ -92,20 +98,26 @@
             return result;
         }
 
-        not3(
-            document.querySelector("canvas"), {
-                fragment: document.getElementById("fs").textContent,
-                uniforms: {
-                    rpm: 0,
-                    hand1: generateDstruct(1, 0, 1, 1),
-                    hand2: generateDstruct(0, 1, 0, 1),
-                    testdata: gen(64, i => generateDstruct(Math.random(), Math.random(), Math.random(), 1))
-                },
-                update: function (u, t) {
-                    u.rpm = 2 * Math.PI * (u.time % 60) / 60;
-                }
+        not3({
+            uniforms: {
+                rpm: 0,
+                hand1: generateDstruct(1, 0, 1, 1),
+                hand2: generateDstruct(0, 1, 0, 1),
+                testdata: gen(64, i => generateDstruct(Math.random(), Math.random(), Math.random(), 1))
+            },
+            textures: [{
+                name: 'u_image0',
+                resolution: [1, 1],
+                data: new Uint8Array([255, 0, 255, 255])
+            }, {
+                name: 'u_image1',
+                resolution: [1, 1],
+                data: new Uint8Array([255, 255, 0, 255])
+            }],
+            update: function (u, t) {
+                u.rpm = 2 * Math.PI * (u.time % 60) / 60;
             }
-        );
+        });
     </script>
 </body>
 
