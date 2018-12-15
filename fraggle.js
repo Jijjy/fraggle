@@ -101,18 +101,18 @@
             options.vertex = 'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }';
 
         if (!options.fragment)
-            options.fragment = document.getElementById("fs").textContent;
+            options.fragment = document.getElementById('fs').textContent.trim();
 
         init();
         animate();
 
         function init() {
             try {
-                gl = canvas.getContext("experimental-webgl");
-            } catch (error) {}
+                gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            } catch (e) {}
 
             if (!gl) {
-                throw "cannot create webgl context";
+                throw 'cannot create webgl context';
             }
 
             buffer = gl.createBuffer();
@@ -150,7 +150,7 @@
             gl.linkProgram(prog);
 
             if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-                console.warn("ERROR - Validate status: " + gl.getProgramParameter(prog, gl.VALIDATE_STATUS) +
+                console.warn('ERROR - Validate status: ' + gl.getProgramParameter(prog, gl.VALIDATE_STATUS) +
                     '\n\n"' + gl.getError() + '"');
             }
 
@@ -164,8 +164,8 @@
             gl.compileShader(shader);
 
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error((type == gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT") +
-                    " SHADER:\n" +
+                console.error((type == gl.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT') +
+                    ' SHADER:\n' +
                     gl.getShaderInfoLog(shader));
 
                 console.warn(src.split('\n').map(function (s, i) {
