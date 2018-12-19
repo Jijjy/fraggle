@@ -1,0 +1,147 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>not3</title>
+
+    <style>
+        html, body, canvas {
+				padding: 0;
+				margin: 0;
+				width: 100%;
+				height: 100%;
+                overflow: hidden;
+			}
+		</style>
+</head>
+
+<body>
+    <canvas></canvas>
+    <script id="fs" type="x-shader/x-fragment">
+        #version 300 es
+      
+      precision highp float;
+      precision highp sampler3D;
+      
+      out vec4 outColor;
+      
+      const float PI = 3.141592653589793238462643383279502884197169;
+      const float TAU = 6.283185307179586476925286766559005768394338;
+      const float EPS = 0.01;
+      const float MAX_DIST = 32.0;
+      const float FOV = TAU / 3.0;
+      const int MAX_ITERATIONS = 128;
+      
+      uniform float time;
+      uniform vec2 resolution;
+      
+      uniform sampler3D texSimplex;
+  
+  float snoise(vec3 v){ 
+    vec3 m32 = vec3(  mod(v.x, 32.0), mod(v.y, 32.0), mod(v.z, 32.0) );
+    vec4 tex = texture( texSimplex, m32 );
+    return distance( vec3(255,255,255), tex.rgb );
+  }
+  
+  float map(vec3 p)
+  {
+      //p.y = pow(p.y, 1.010);
+      vec3 c = vec3(0,-1,3);
+      float r = 3.0;
+      float y = p.y-c.y + r;
+      float hm = 0.1 + 0.002*pow(4.0*y, 2.0);
+      return distance(p, c) - r + hm*(snoise(p - vec3(0,0.5,0)*time) + 0.2*snoise(4.0*p - vec3(0,3.0,0)*time));
+  }
+  
+  float trace(vec3 ro, vec3 rd)
+  {
+      float depth = 0.5;
+      for (int i = 0; i < MAX_ITERATIONS; i++)
+      {
+          float d = map(ro + rd * depth);
+          if (d < EPS) return depth;
+          depth += ( 1.0 + 5.0*depth ) * d * 0.01;
+          if (depth >= MAX_DIST) return MAX_DIST; 
+      }
+  
+      return MAX_DIST;
+  }
+  
+  mat3 lookat(vec3 fw)
+  {
+      fw=normalize(fw);
+      vec3 rt=normalize(cross(fw,vec3(0.0,1.0,0.0)));
+      return mat3(rt,cross(rt,fw),fw);
+  }
+  
+  vec3 calcNorm(vec3 p)
+  {
+      float e = 0.1*EPS;
+      return normalize(vec3(
+          map(vec3(p.x + e, p.y, p.z)) - map(vec3(p.x - e, p.y, p.z)),
+          map(vec3(p.x, p.y + e, p.z)) - map(vec3(p.x, p.y - e, p.z)),
+          map(vec3(p.x, p.y, p.z + e)) - map(vec3(p.x, p.y, p.z - e))
+      ));
+  }
+  
+  void main()
+  {
+      vec2 xy = gl_FragCoord.xy - resolution.xy / 2.0;
+      outColor = texture( texSimplex, vec3(gl_FragCoord.xy, 10.0*time)*0.01 );
+      //float z = resolution.y / tan(FOV / 2.0);
+      //vec3 ro = vec3( 0, 0, 10.0);
+      //vec3 rd = normalize( vec3(xy, -z) );
+      //float d = trace(ro, rd);
+      //vec3 fogColor = vec3(0.3,0.1,0.2);
+      //if(d >= MAX_DIST)
+      //{
+      //    outColor = vec4(fogColor,1);
+      //}
+      //else
+      //{
+      //    float f = 0.2*d*d / MAX_DIST;
+      //    vec3 p = ro + rd * d;
+      //    vec3 norm = calcNorm(p);
+      //    float dt = 0.5 + 0.5*dot(normalize(rd), norm);
+      //    vec3 fp = floor(p);
+      //    vec3 c = vec3(1,1,1)*0.5;
+      //    outColor = vec4(mix(c.xyz, fogColor,f)*dt,1);
+      //}
+  }
+    </script>
+    </script>
+
+    <script src="fraggle.js"></script>
+    <script>
+        function gen(len, fun) {
+            let result = [];
+            for (let i = 0; i < len; i++) result.push(fun(i));
+            return result;
+        }
+
+        function randomByte() {
+            return Math.floor(Math.random() * 255);
+        }
+
+        var SIZE = 32;
+        var data = new Uint8Array(SIZE * SIZE * SIZE);
+        for (var k = 0; k < SIZE; ++k) {
+            for (var j = 0; j < SIZE; ++j) {
+                for (var i = 0; i < SIZE; ++i) {
+                    data[i + j * SIZE + k * SIZE * SIZE] = Math.floor(Math.random() * 255);
+                }
+            }
+        }
+
+        not3({
+            textures: [{
+                name: "texSimplex",
+                resolution: [32, 32, 32],
+                data: data
+            }]
+        });
+    </script>
+</body>
+
+</html>
