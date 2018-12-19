@@ -52,9 +52,7 @@
 
         function init() {
             try {
-                gl = cvs.getContext('webgl2', {
-                    antialias: false
-                }) || cvs.getContext('webgl');
+                gl = cvs.getContext('webgl2') || cvs.getContext('webgl');
             } catch (e) {}
 
             if (!gl) {
@@ -75,7 +73,7 @@
 
             program = createProgram(options.vertex, options.fragment);
 
-            texActivators = texInfo.map(function (t) {
+            texActivators = texInfo && texInfo.map(function (t) {
                 return (function (t) {
                     var loc = gl.getUniformLocation(program, t.name);
                     return function () {
