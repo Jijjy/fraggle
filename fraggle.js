@@ -25,7 +25,7 @@
             version = '';
 
         //legacy
-        if (options === typeof Element) {
+        if (arguments[1]) {
             options = arguments[1];
             options.canvas = arguments[0];
         }
