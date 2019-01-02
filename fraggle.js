@@ -53,7 +53,7 @@
         function init() {
             try {
                 gl = cvs.getContext('webgl2') || cvs.getContext('webgl');
-            } catch (e) { }
+            } catch (e) {}
 
             if (!gl) {
                 throw 'cannot create webgl context';
@@ -228,7 +228,9 @@
             setUniforms(uniforms, uniformSetters);
 
             if (texActivators) {
-                texActivators.forEach(function (x) { x(); });
+                texActivators.forEach(function (x) {
+                    x();
+                });
             }
 
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -244,7 +246,7 @@
                     if (!setters[k])
                         setUniforms(obj[k], setters.setters[k]);
                     else if (setters[k] instanceof Function)
-                        setters[k](obj[k]);
+                setters[k](obj[k]);
         }
     }
 
@@ -295,7 +297,7 @@
                         }
                     })(gl, loc);
 
-                //gl.uniformMatrix[234]fv();
+                    //gl.uniformMatrix[234]fv();
             }
         }
 
