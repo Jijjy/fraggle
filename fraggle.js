@@ -53,7 +53,7 @@
         function init() {
             try {
                 gl = cvs.getContext('webgl2') || cvs.getContext('webgl');
-            } catch (e) {}
+            } catch (e) { }
 
             if (!gl) {
                 throw 'cannot create webgl context';
@@ -73,16 +73,18 @@
 
             program = createProgram(options.vertex, options.fragment);
 
-            texActivators = texInfo && texInfo.map(function (t) {
-                return (function (t) {
-                    var loc = gl.getUniformLocation(program, t.name);
-                    return function () {
-                        gl.uniform1i(loc, t.index);
-                        gl.activeTexture(glTEXTURE[t.index]);
-                        gl.bindTexture(gl.TEXTURE_3D, t.texture);
-                    }
-                })(t);
-            });
+            if (texInfo) {
+                texActivators = texInfo.map(function (t) {
+                    return (function (t) {
+                        var loc = gl.getUniformLocation(program, t.name);
+                        return function () {
+                            gl.uniform1i(loc, t.index);
+                            gl.activeTexture(glTEXTURE[t.index]);
+                            gl.bindTexture(gl.TEXTURE_3D, t.texture);
+                        }
+                    })(t);
+                });
+            }
 
             uniforms.time = 0;
             uniforms.resolution = [0, 0];
@@ -225,9 +227,9 @@
 
             setUniforms(uniforms, uniformSetters);
 
-            texActivators.forEach(function (x) {
-                x();
-            });
+            if (texActivators) {
+                texActivators.forEach(function (x) { x(); });
+            }
 
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
             gl.vertexAttribPointer(vertex_position, 2, gl.FLOAT, false, 0, 0);
@@ -242,7 +244,7 @@
                     if (!setters[k])
                         setUniforms(obj[k], setters.setters[k]);
                     else if (setters[k] instanceof Function)
-                setters[k](obj[k]);
+                        setters[k](obj[k]);
         }
     }
 
@@ -293,7 +295,7 @@
                         }
                     })(gl, loc);
 
-                    //gl.uniformMatrix[234]fv();
+                //gl.uniformMatrix[234]fv();
             }
         }
 
