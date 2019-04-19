@@ -220,7 +220,7 @@
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.useProgram(program);
 
-            let delta = now() - uniforms.time;
+            let delta = 0.001 * now() - uniforms.time;
             uniforms.time = 0.001 * (now() - start_time);
             if (options.update)
                 options.update(uniforms, delta);
