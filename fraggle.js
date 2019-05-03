@@ -36,16 +36,20 @@
         cvs = options.canvas || document.querySelector('canvas');
 
         if (!options.fragment)
-            options.fragment = document.getElementById('fs').textContent.trim();
+            options.fragment = document.getElementById('fs').textContent;
 
-        let ln = options.fragment.indexOf('\n');
-        version = options.fragment.indexOf('#version') < 0 ? '' : options.fragment.substr(0, ln + 1);
-        options.fragment = options.fragment.substr(ln);
+        options.fragment = options.fragment.trim();
+
+        let firstLine = options.fragment.split('\n')[0];
+        if (firstLine.indexOf('#version') === 0) {
+            version = firstLine;
+            options.fragment = options.fragment.replace(version, '');
+        }
 
         if (!options.vertex) {
             options.vertex = version + (version.indexOf('300') < 0 ?
-                'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }' :
-                'in vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }');
+                '\nattribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }' :
+                '\nin vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }');
         }
 
         init();
