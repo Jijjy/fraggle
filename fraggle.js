@@ -216,6 +216,7 @@
 
         if (options.init)
             options.init({
+                gl: gl,
                 resizeCanvas: resizeCanvas,
                 render: render,
                 animate: animate
