@@ -196,24 +196,34 @@
             });
         }
 
-        function resizeCanvas() {
+        function resizeCanvas(w, h) {
+            w = w || cvs.clientWidth;
+            h = h || cvs.clientHeight;
             if (
-                cvs.width != cvs.clientWidth ||
-                cvs.height != cvs.clientHeight
+                cvs.width != w ||
+                cvs.height != h
             ) {
-                cvs.width = cvs.clientWidth * scaling;
-                cvs.height = cvs.clientHeight * scaling;
+                cvs.width = w * scaling;
+                cvs.height = h * scaling;
 
                 uniforms.resolution = [cvs.width, cvs.height];
                 gl.viewport(0, 0, cvs.width, cvs.height);
             }
         }
 
+        if (options.animate !== false)
+            requestAnimationFrame(animate);
 
-        requestAnimationFrame(animate);
+        if (options.init)
+            options.init({
+                resizeCanvas: resizeCanvas,
+                render: render,
+                animate: animate
+            });
 
         function animate() {
-            resizeCanvas();
+            if (options.autoResize !== false)
+                resizeCanvas();
             render();
             requestAnimationFrame(animate);
         }
@@ -254,6 +264,7 @@
         }
     }
 
+    //#region setters
     function getSetters(gl, prog, obj, pfx, depth) {
         if (!obj) return;
         depth = (depth + 1) || 0;
@@ -330,5 +341,5 @@
 
         return setters;
     }
-
+    //#endregion
 })();
