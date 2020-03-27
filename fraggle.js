@@ -1,15 +1,41 @@
-(function () {
-    var now;
-    if (performance && performance.now) {
-        now = function () {
-            return performance.now();
-        };
-    } else {
-        now = function () {
-            return new Date().getTime();
-        };
+window.not3 = opt => {
+    const now = (performance && performance.now) ? (() => performance.now()) : (() => new Date().getTime());
+
+    opt = Object.assign({
+        fragment: document.getElementById('fs').textContent.trim(),
+        canvas: document.querySelector('canvas')
+    }, opt);
+
+    let ln = opt.fragment.indexOf('\n');
+    const version = opt.fragment.indexOf('#version') < 0 ? '' : opt.fragment.substr(0, ln + 1);
+    opt.fragment = opt.fragment.substr(ln);
+
+    if (!opt.vertex) {
+        opt.vertex = version + (version.indexOf('300') < 0 ?
+            'attribute vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }' :
+            'in vec3 position;\nvoid main() { gl_Position = vec4( position, 1.0 ); }');
     }
 
+<<<<<<< HEAD
+    const cvs = opt.canvas,
+        gl = cvs.getContext('webgl2') || cvs.getContext('webgl'),
+        buf = gl.createBuffer(),
+        prog = createProgram(opt.vertex, opt.fragment),
+        glSetters = {
+            1: (i, v) => gl.uniform1f(i, v),
+            2: (i, v) => gl.uniform2fv(i, v),
+            3: (i, v) => gl.uniform3fv(i, v),
+            4: (i, v) => gl.uniform4fv(i, v),
+            9: (i, v) => gl.uniformMatrix3fv(i, false, v),
+            16: (i, v) => gl.uniformMatrix4fv(i, false, v)
+        },
+        vLoc = 0,
+        uniforms = Object.assign(opt.uniforms, { time: 0, resolution: [0, 0] }),
+        setters = getSetters(gl, prog, uniforms);
+
+    var tStart = now(),
+        scaling = opt ? opt.scaling || 1 : 1;
+=======
     window.not3 = function (options) {
         var cvs,
             gl,
@@ -94,59 +120,73 @@
             uniforms.resolution = [0, 0];
             uniformSetters = getSetters(gl, program, uniforms);
         }
+>>>>>>> f6e24e5bede9c934aa9bf29ffb2dfdd82cadd918
 
-        function createProgram(vertex, fragment) {
-            var prog = gl.createProgram();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER,
+        new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]),
+        gl.STATIC_DRAW);
 
-            var vs = createShader(vertex, gl.VERTEX_SHADER);
+    function createProgram(vtx, frg) {
+        const p = gl.createProgram(),
+            vs = createShader(vtx, gl.VERTEX_SHADER);
 
-            fragment = fragment.trim();
+        frg = frg.trim();
 
-            if (fragment.indexOf('precision') < 0) {
-                fragment = "#ifdef GL_ES\n  precision highp float;\n#endif\n\n" + fragment;
-            }
+        if (frg.indexOf('precision') < 0)
+            frg = "#ifdef GL_ES\n  precision highp float;\n#endif\n\n" + frg;
 
-            var fs = createShader(version + '\n' + fragment, gl.FRAGMENT_SHADER);
+        var fs = createShader(version + '\n' + frg, gl.FRAGMENT_SHADER);
 
-            if (!vs || !fs) return;
+        if (!vs || !fs) return;
 
-            gl.attachShader(prog, vs);
-            gl.attachShader(prog, fs);
+        gl.attachShader(p, vs);
+        gl.attachShader(p, fs);
 
-            gl.deleteShader(vs);
-            gl.deleteShader(fs);
+        gl.deleteShader(vs);
+        gl.deleteShader(fs);
 
-            gl.linkProgram(prog);
+        gl.linkProgram(p);
 
-            if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-                console.warn('ERROR - Validate status: ' + gl.getProgramParameter(prog, gl.VALIDATE_STATUS) +
-                    '\n\n"' + gl.getError() + '"');
-            }
-
-            return prog;
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+            console.warn('ERROR - Validate status: ' + gl.getProgramParameter(p, gl.VALIDATE_STATUS) +
+                '\n\n"' + gl.getError() + '"');
         }
 
-        function createShader(src, type) {
-            var shader = gl.createShader(type);
+        return p;
+    }
 
-            gl.shaderSource(shader, src);
-            gl.compileShader(shader);
+    function createShader(src, type) {
+        var shader = gl.createShader(type);
 
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error((type == gl.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT') +
-                    ' SHADER:\n' +
-                    gl.getShaderInfoLog(shader));
+        gl.shaderSource(shader, src);
+        gl.compileShader(shader);
 
-                console.warn(src.split('\n').map(function (s, i) {
-                    return i + ': ' + s;
-                }).join('\n'));
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error((type == gl.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT') +
+                ' SHADER:\n' +
+                gl.getShaderInfoLog(shader));
 
-                return;
-            }
+            console.warn(src.split('\n').map((s, i) => i + ': ' + s).join('\n'));
 
-            return shader;
+<<<<<<< HEAD
+            return;
         }
 
+        return shader;
+    }
+
+    function resizeCanvas() {
+        if (
+            cvs.width != cvs.clientWidth ||
+            cvs.height != cvs.clientHeight
+        ) {
+            cvs.width = cvs.clientWidth * scaling;
+            cvs.height = cvs.clientHeight * scaling;
+
+            uniforms.resolution = [cvs.width, cvs.height];
+            gl.viewport(0, 0, cvs.width, cvs.height);
+=======
         function loadTextures(textures) {
 
             function load2d(t) {
@@ -227,44 +267,51 @@
                 resizeCanvas();
             render();
             requestAnimationFrame(animate);
+>>>>>>> f6e24e5bede9c934aa9bf29ffb2dfdd82cadd918
         }
+    }
 
-        function render() {
-            if (!program) return;
+    requestAnimationFrame(animate);
 
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.useProgram(program);
+    function animate() {
+        resizeCanvas();
+        render();
+        requestAnimationFrame(animate);
+    }
 
+<<<<<<< HEAD
+    function render() {
+        if (!prog) return;
+=======
             let delta = 0.001 * now() - uniforms.time;
             uniforms.time = 0.001 * (now() - start_time);
             if (options.update)
                 options.update(uniforms, delta);
+>>>>>>> f6e24e5bede9c934aa9bf29ffb2dfdd82cadd918
 
-            setUniforms(uniforms, uniformSetters);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.useProgram(prog);
 
-            if (texActivators) {
-                texActivators.forEach(function (x) {
-                    x();
-                });
-            }
+        let delta = now() - uniforms.time;
+        uniforms.time = 0.001 * (now() - tStart);
+        if (opt.update)
+            opt.update(uniforms, delta);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            gl.vertexAttribPointer(vertex_position, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(vertex_position);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            gl.disableVertexAttribArray(vertex_position);
+        for (let k in uniforms) {
+            setters[k].set(uniforms[k]);
         }
 
-        function setUniforms(obj, setters) {
-            if (setters)
-                for (let k in obj)
-                    if (!setters[k])
-                        setUniforms(obj[k], setters.setters[k]);
-                    else if (setters[k] instanceof Function)
-                setters[k](obj[k]);
-        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.vertexAttribPointer(vLoc, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vLoc);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.disableVertexAttribArray(vLoc);
     }
 
+<<<<<<< HEAD
+    function getSetters(gl, prog, obj) {
+        let r = {};
+=======
     //#region setters
     function getSetters(gl, prog, obj, pfx, depth) {
         if (!obj) return;
@@ -322,25 +369,15 @@
         };
 
         // horrific
+>>>>>>> f6e24e5bede9c934aa9bf29ffb2dfdd82cadd918
         for (let k in obj) {
-            if (!isNaN(obj[k])) {
-                setters[k] = getSetter(gl, pfx + k, obj[k]);
-            } else if (obj[k] instanceof Array) {
-                if (!isNaN(obj[k][0])) {
-                    setters[k] = getSetter(gl, pfx + k, obj[k]);
-                } else {
-                    setters.setters[k] = {
-                        setters: {}
-                    };
-                    for (let i = 0; i < obj[k].length; i++)
-                        setters.setters[k].setters[i] = getSetters(gl, prog, obj[k][i], pfx + k + '[' + i + ']' + '.', depth);
-                }
-            } else {
-                setters.setters[k] = getSetters(gl, prog, obj[k], pfx + k + '.', depth);
-            }
+            r[k] = { loc: gl.getUniformLocation(prog, k), set: function (val) { glSetters[obj[k].length || 1](this.loc, val); } };
         }
-
-        return setters;
+        return r;
     }
+<<<<<<< HEAD
+}
+=======
     //#endregion
 })();
+>>>>>>> f6e24e5bede9c934aa9bf29ffb2dfdd82cadd918
