@@ -23,111 +23,71 @@
     <canvas></canvas>
     <div id="info"></div>
 
-    <script id="fs" type="x-shader/fragment">
-        #version 300 es
-
-        out vec4 outColor;
-
-        const float tau = 6.28318530718;
-
+    <script id="fs" type="x-shader/x-fragment">
         uniform float time;
         uniform float rpm;
         uniform vec2 resolution;
-
-        struct astruct{ float val; };
-        struct bstruct{ astruct sub; float val; };
-        struct cstruct{ bstruct sub; float val; };
-        struct dstruct{ cstruct sub; float val; };
-
-        uniform dstruct hand1;
-        uniform dstruct hand2;
-
-        uniform sampler2D u_image0;
-        uniform sampler2D u_image1;
-
-        const int TEST_DATA_SIZE = 64;
-        uniform dstruct testdata[TEST_DATA_SIZE];
-
-        vec4 getColor(dstruct d){ return vec4( d.val, d.sub.val, d.sub.sub.val, d.sub.sub.sub.val); }
-
-        bool hand(float a){
-            return sin(a + rpm) > 0.999;
+        
+        const float pi = 3.141592653589793238462643383279502884197169;
+        const float tau = 6.283185307179586476925286766559005768394338;
+        const float pulse = 10.0;
+        
+        float rand(vec2 co){
+          return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
         }
-
-        void main( ) {
-            vec2 pos = - 1.0 + 2.0 * gl_FragCoord.xy / resolution.xy;
-            float a = atan(pos.y, pos.x);
-
-            if(gl_FragCoord.x + gl_FragCoord.y < 128.0){
-                outColor = texture( u_image0, vec2( mod(gl_FragCoord.x, 32.0)/32.0, mod(gl_FragCoord.y, 32.0)/32.0 ) );
-            }else if(gl_FragCoord.x + gl_FragCoord.y < 150.0){
-                for(int i=0; i<TEST_DATA_SIZE; i++){
-                    if(i > int(gl_FragCoord.x)){
-                        outColor = getColor( testdata[i] );
-                        break;
-                    }
-                }
-            } else if(hand(a + rpm)){
-                outColor = getColor( hand1 );
-            } else if(hand(a + 60.0*rpm)){
-                outColor = getColor( hand2 );
-            } else {
-                float ma = a - mod(a, tau/12.0);
-                outColor = vec4( hand(a + rpm) , hand(a + 60.0*rpm) , 0.5 + 0.5*sin(ma) , 1);
-            }
+        
+        float modtau(float f){ return mod(mod(f, tau) + tau, tau); }
+        float tri(float f){ return -1.0 + 2.0 * abs(modtau(f) - pi) / pi; }
+        float tri_t(float a, float f){ return min(max(tri(f) * a, -1.0), 1.0); }
+        float sqr(float f){ return modtau(f) < 0.5*tau ? 1.0 : -1.0; }
+        vec2 floorv(vec2 v){ return vec2(floor(v.x), floor(v.y)); }
+        
+        bool checked(vec2 p, float sz){
+          return ( mod(p.x, sz) > 0.5*sz )
+            ? ( mod(p.y, sz) > 0.5*sz )
+            : ( mod(p.y, sz) < 0.5*sz );
         }
- 
-		</script>
+        
+        void main()
+        {
+          vec2 p = (gl_FragCoord.xy - 0.5*resolution)/length(resolution);
+          
+          vec4 c1 = vec4(0.6,0.7,0.5,1);
+          vec4 c2 = vec4(0.9,1,0.8,1);
+          
+          float t = rpm/tau;
+          
+          float d = fract((cos(rpm)*p.x + sin(rpm)*p.y)*0.25 - 4.0*t);
+          float n = 1.0/9.0;
+          float sp = sin(pulse*rpm);
+          
+          if((d -= n) < 0.0) //checkerboard
+            gl_FragColor = checked(p, 0.05 + 0.005*sp) ? c1 : c2;
+          else if((d -= n) < 0.0) //horizontal stripes
+            gl_FragColor = mod(p.y, 0.02 + 0.005*sp) > 0.01 ? c1 : c2;
+          else if((d -= n) < 0.0) //checker striped
+            gl_FragColor = mod(checked(p, 0.2) ? p.x : p.y, 0.02) > 0.01 ? c1 : c2;
+          else if((d -= n) < 0.0) //vertical stripes
+            gl_FragColor = mod(p.x, 0.02 + 0.005*sp) > 0.01 ? c1 : c2;
+          else if((d -= n) < 0.0) //random
+            gl_FragColor = rand(10.0*p) > 0.5 ? c1 : c2;
+          else if((d -= n) < 0.0) //lo-res random
+            gl_FragColor = rand(floorv(p*(150.0 + 50.0*sp))) > 0.5 ? c1 : c2;
+          else if((d -= n) < 0.0) //starburst
+            gl_FragColor = fract( sp + 12.0*atan(p.y, p.x)/tau ) > 0.5 ? c1 : c2;
+          else if((d -= n) < 0.0) //spiral starburst
+            gl_FragColor = fract( sp + 10.0*length(p) - 12.0*atan(p.y, p.x)/tau) > 0.5 ? c1 : c2;
+          else if((d -= n) < 0.0) //concentric circles
+            gl_FragColor = mod(0.25*sp + length(p), 0.05 + 0.01*sp) > 0.025 ? c1 : c2;
+          else
+            gl_FragColor = vec4(1,0.0,1,1);
+        }
+      </script>
 
     <script src="fraggle.js"></script>
     <script>
-        function generateDstruct(r, g, b, a) {
-            return {
-                val: r,
-                sub: {
-                    val: g,
-                    sub: {
-                        val: b,
-                        sub: {
-                            val: a
-                        }
-                    }
-                }
-            }
-        }
-
-        function gen(len, fun) {
-            let result = [];
-            for (let i = 0; i < len; i++) result.push(fun(i));
-            return result;
-        }
-
-        function randomByte() {
-            return Math.floor(Math.random() * 255);
-        }
-
         not3({
-            uniforms: {
-                rpm: 0,
-                hand1: generateDstruct(1, 0, 1, 1),
-                hand2: generateDstruct(0, 1, 0, 1),
-                testdata: gen(64, i => generateDstruct(Math.random(), Math.random(), Math.random(), 1))
-            },
-            textures: [{
-                name: 'u_image0',
-                resolution: [32, 32],
-                data: new Uint8Array(gen(4 * 32 * 32, i => i % 4 === 3 ? 255 : randomByte()))
-            }, {
-                name: 'u_image1',
-                resolution: [32, 32],
-                data: new Uint8Array(gen(4 * 32 * 32, i => i % 4 === 3 ? 255 : randomByte()))
-            }],
-            animate: false,
-            init: function (x) {
-                x.resizeCanvas(10, 10);
-                x.render();
-                setTimeout(x.animate, 1000);
-            },
+            uniforms: { rpm: 0 },
             update: function (u, t) {
                 u.rpm = 2 * Math.PI * (u.time % 60) / 60;
             }
