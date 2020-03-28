@@ -10,11 +10,9 @@ window.not3 = opt => {
     const version = opt.fragment.indexOf('#version') < 0 ? '' : opt.fragment.substr(0, ln + 1);
     opt.fragment = opt.fragment.substr(ln);
 
-    if (!opt.vertex) {
-        opt.vertex = version + (version.indexOf('300') < 0 ?
-            'attribute vec3 position;\nvoid main(){gl_Position=vec4(position,1.);}' :
-            'in vec3 position;\nvoid main(){gl_Position=vec4(position,1.);}');
-    }
+    if (!opt.vertex)
+        opt.vertex = version + (version.indexOf('300') < 0 ? 'attribute' : 'in') +
+            ' vec3 position;\nvoid main(){gl_Position=vec4(position,1.);}';
 
     const cvs = opt.canvas,
         gl = cvs.getContext('webgl2') || cvs.getContext('webgl'),
@@ -76,7 +74,7 @@ window.not3 = opt => {
         gl.compileShader(shader);
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            console.error((type == gl.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT') +
+            console.error((type == gl.VERTEX_SHADER ? 'VERT' : 'FRAG') +
                 ' SHADER:\n' +
                 gl.getShaderInfoLog(shader));
 
