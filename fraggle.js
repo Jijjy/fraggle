@@ -25,7 +25,7 @@ window.not3 = opt => {
             16: (i, v) => gl.uniformMatrix4fv(i, false, v)
         },
         vLoc = 0,
-        uniforms = Object.assign(opt.uniforms, { time: 0, resolution: [0, 0] }),
+        uniforms = Object.assign(opt.uniforms || {}, { time: 0, resolution: [0, 0] }),
         setters = getSetters(gl, prog, uniforms);
 
     var tStart = now(),
