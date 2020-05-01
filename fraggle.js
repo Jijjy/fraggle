@@ -1,10 +1,8 @@
 window.not3 = opt => {
     const now = (performance && performance.now) ? (() => performance.now()) : (() => new Date().getTime());
 
-    opt = Object.assign({
-        fragment: document.getElementById('fs').textContent.trim(),
-        canvas: document.querySelector('canvas')
-    }, opt);
+    opt.fragment = opt.fragment || document.getElementById('fs').textContent.trim();
+    opt.canvas = opt.canvas || document.querySelector('canvas');
 
     let ln = opt.fragment.indexOf('\n');
     const version = opt.fragment.indexOf('#version') < 0 ? '' : opt.fragment.substr(0, ln + 1);
